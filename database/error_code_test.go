@@ -22,7 +22,6 @@ import (
 	. "github.com/onsi/ginkgo/v2/dsl/table" // nolint
 	. "github.com/onsi/gomega"              // nolint
 
-	"github.com/jackc/pgconn"
 	"github.com/lib/pq"
 )
 
@@ -40,13 +39,6 @@ var _ = DescribeTable(
 	Entry(
 		"From 'pq'",
 		&pq.Error{
-			Code: "123",
-		},
-		"123",
-	),
-	Entry(
-		"From 'pgconn'",
-		&pgconn.PgError{
 			Code: "123",
 		},
 		"123",
