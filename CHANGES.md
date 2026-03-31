@@ -3,6 +3,10 @@
 This document describes the relevant changes between releases of the OCM API
 SDK.
 
+## 0.1.499 Mar 31 2026
+
+- OCM-22967 | fix: removing pgx dependency
+
 ## 0.1.498 Mar 11 2026
 
 - Update model to 0.0.453
