@@ -10,8 +10,6 @@ require (
 	github.com/golang/glog v1.0.0
 	github.com/google/uuid v1.3.0
 	github.com/itchyny/gojq v0.12.7
-	github.com/jackc/pgconn v1.14.3
-	github.com/jackc/pgx/v4 v4.18.3
 	github.com/json-iterator/go v1.1.12
 	github.com/lib/pq v1.10.5
 	github.com/microcosm-cc/bluemonday v1.0.18
@@ -19,7 +17,6 @@ require (
 	github.com/onsi/gomega v1.29.0
 	github.com/prometheus/client_golang v1.12.1
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
-	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/net v0.39.0
 	golang.org/x/oauth2 v0.15.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -51,12 +48,6 @@ require (
 	github.com/gorilla/css v1.0.0 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/itchyny/timefmt-go v0.1.3 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
-	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
-	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
