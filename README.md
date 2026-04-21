@@ -6,6 +6,14 @@
 This project contains a Go library that simplifies the use of the _OCM_
 API, available in `api.openshift.com`.
 
+## Quick Start
+
+```bash
+make generate         # Regenerate SDK code from model
+make ginkgo-install   # Install test runner
+make lint             # Run linters
+```
+
 ## Usage
 
 To use it import the `github.com/openshift-online/ocm-sdk-go` package, and then
