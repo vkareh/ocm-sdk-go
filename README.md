@@ -293,3 +293,9 @@ on top of this SDK.
 ## FedRAMP
 
 The OCM SDK fully supports the OCM FedRAMP environment. Additional `TokenURL`, `URL`, and `Client` configuration is required in order to make the connection. An example implementation for the OCM FedRAMP environment can be found in the [examples](examples/fedramp_auth.go) directory.
+
+## Installation
+
+```bash
+go get github.com/openshift-online/ocm-sdk-go
+```
