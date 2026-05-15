@@ -1,0 +1,134 @@
+#
+# Copyright (c) 2026 Red Hat, Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Sync from model
+
+on:
+  repository_dispatch:
+    types:
+      - model-updated
+
+jobs:
+  sync-from-model:
+    name: Bump model and regenerate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Detect fork
+        id: fork
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PARENT=$(gh api "repos/${{ github.repository }}" --jq '.parent.full_name // ""')
+          if [ -n "$PARENT" ]; then
+            # Running in a fork — derive the model fork from the same owner
+            OWNER="${{ github.repository_owner }}"
+            echo "model_repo=github.com/${OWNER}/ocm-api-model" >> "$GITHUB_OUTPUT"
+            echo "is_fork=true" >> "$GITHUB_OUTPUT"
+            echo "Detected fork. Model repo: github.com/${OWNER}/ocm-api-model"
+          else
+            echo "model_repo=github.com/openshift-online/ocm-api-model" >> "$GITHUB_OUTPUT"
+            echo "is_fork=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump ocm-api-model dependency
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          echo "Bumping ocm-api-model to ${VERSION}"
+
+          if [ "${{ steps.fork.outputs.is_fork }}" = "true" ]; then
+            MODEL="${{ steps.fork.outputs.model_repo }}"
+            echo "Using fork model: ${MODEL}"
+            GONOSUMCHECK="github.com/openshift-online/ocm-api-model/*,${MODEL}/*" \
+              GONOSUMDB="github.com/openshift-online/ocm-api-model/*,${MODEL}/*" \
+              GOFLAGS="-mod=mod" \
+              go mod edit \
+                -replace "github.com/openshift-online/ocm-api-model=${MODEL}@${VERSION}" \
+                -replace "github.com/openshift-online/ocm-api-model/clientapi=${MODEL}/clientapi@clientapi/${VERSION}" \
+                -replace "github.com/openshift-online/ocm-api-model/model=${MODEL}/model@model/${VERSION}"
+          else
+            go get "github.com/openshift-online/ocm-api-model@${VERSION}"
+            go get "github.com/openshift-online/ocm-api-model/clientapi@clientapi/${VERSION}"
+            go get "github.com/openshift-online/ocm-api-model/model@model/${VERSION}"
+          fi
+          go mod tidy
+
+      - name: Install tools
+        run: make metamodel-install goimports-install
+
+      - name: Regenerate SDK
+        run: make generate
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No SDK changes from this model update."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "SDK changes detected:"
+            git diff --stat
+          fi
+
+      - name: Create PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ github.event.client_payload.version }}"
+          BRANCH="sync-model/${VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "${BRANCH}"
+          git add -A
+          git commit -m "chore: bump ocm-api-model to ${VERSION}
+
+          Auto-generated from ocm-api-model release ${VERSION}.
+          Release: ${{ github.event.client_payload.release_url }}"
+
+          git push origin "${BRANCH}"
+
+          gh pr create \
+            --title "chore: bump ocm-api-model to ${VERSION}" \
+            --body "$(cat <<'EOF'
+          ## Auto-generated SDK update
+
+          Triggered by ocm-api-model release [${{ github.event.client_payload.version }}](${{ github.event.client_payload.release_url }}).
+
+          The ocm-api-model dependency was bumped and the SDK was regenerated
+          using `make generate`.
+
+          ### Review
+          This PR contains only auto-generated code. If CI passes, it is safe to merge.
+          EOF
+          )" \
+            --base main \
+            --head "${BRANCH}"
